@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalori Paneli</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <button id="logoutBtn" style="float: right;">Çıkış Yap</button>
+        <h2>Bugün Neler Yedin?</h2>
+        
+        <div class="add-food">
+            <input type="text" id="foodName" placeholder="Yiyecek adı (örn: Elma)">
+            <input type="number" id="foodCalorie" placeholder="Kalori (örn: 150)">
+            <button id="addBtn">Ekle</button>
+        </div>
+
+        <h3>Toplam Kalori: <span id="totalCalories">0</span> kcal</h3>
+        
+        <ul id="foodList">
+            </ul>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
