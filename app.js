@@ -1,7 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
 const GEMINI_API_KEY = "AIzaSyBz7C95mjwr3AoLREx4Ch06sVRE9cLTiYg";
+
 // Senin Firebase ayarların
 const firebaseConfig = {
   apiKey: "AIzaSyBNuu3I0mX8_Dj0ABOIKwissv7mNfNLUs0",
@@ -19,8 +21,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // HTML'deki yerleri seçiyoruz
-const foodNameInput = document.getElementById('foodName');
-const foodCalorieInput = document.getElementById('foodCalorie');
+const foodInput = document.getElementById('foodInput');
 const addBtn = document.getElementById('addBtn');
 const foodList = document.getElementById('foodList');
 const totalCaloriesSpan = document.getElementById('totalCalories');
@@ -35,7 +36,6 @@ onAuthStateChanged(auth, (user) => {
         currentUser = user;
         loadFoods(); // Giriş yaptıysa veritabanından yedikleri getir
     } else {
-        // Giriş yapmamışsa (veya çıkış yaptıysa) gizlice bu sayfaya giremesin, ana sayfaya at
         window.location.href = "index.html";
     }
 });
@@ -48,8 +48,6 @@ logoutBtn.addEventListener('click', () => {
 });
 
 // 3. Yapay Zeka ile Yiyecek ve Kalori Ekleme
-const foodInput = document.getElementById('foodInput'); // Yeni HTML kutumuz
-
 addBtn.addEventListener('click', async () => {
     const userInput = foodInput.value;
 
@@ -58,15 +56,12 @@ addBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Kullanıcıya hesaplandığını hissettirelim
     addBtn.innerText = "Yapay Zeka Hesaplarken Bekle... ⏳";
     addBtn.disabled = true;
 
     try {
-        // Yapay Zekaya vereceğimiz gizli komut (Prompt)
         const prompt = `Kullanıcı şu yemeği yediğini söylüyor: "${userInput}". Bana sadece bu yemeğin temizlenmiş özet adını ve toplam kalorisini aralarında virgül olacak şekilde tek satırda dön. Örnek çıktı: 2 Lahmacun ve Ayran, 650. Sadece bu formatta cevap ver, asla başka kelime veya açıklama yazma.`;
         
-        // Gemini AI'a internet üzerinden istek atıyoruz
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -76,15 +71,11 @@ addBtn.addEventListener('click', async () => {
         });
 
         const data = await response.json();
-        
-        // AI'dan gelen cevabı alıyoruz (Örn: "2 Lahmacun ve Ayran, 650")
         const aiResponse = data.candidates[0].content.parts[0].text.trim();
         
-        // Gelen cevabı virgülden ikiye bölüyoruz (İsim ve Kalori olarak)
         const [foodName, foodCalorieText] = aiResponse.split(',');
         const calories = Number(foodCalorieText);
 
-        // Firebase veritabanına kaydet
         await addDoc(collection(db, "foods"), {
             uid: currentUser.uid,
             name: foodName.trim(),
@@ -92,7 +83,6 @@ addBtn.addEventListener('click', async () => {
             timestamp: new Date()
         });
         
-        // Kutuyu temizle ve ekrana yazdır
         foodInput.value = "";
         addFoodToDOM(foodName.trim(), calories);
 
@@ -100,7 +90,6 @@ addBtn.addEventListener('click', async () => {
         console.error("Yapay Zeka Hatası: ", e);
         alert("Kalori hesaplanırken bir sorun oluştu! Farklı bir şekilde yazmayı dene.");
     } finally {
-        // Butonu eski haline getir
         addBtn.innerText = "Yapay Zekaya Sor ve Ekle";
         addBtn.disabled = false;
     }
@@ -108,10 +97,9 @@ addBtn.addEventListener('click', async () => {
 
 // 4. Veritabanından Kullanıcının Kendi Verilerini Çekme
 async function loadFoods() {
-    foodList.innerHTML = ""; // Önce listeyi temizle
+    foodList.innerHTML = ""; 
     totalCals = 0; 
     
-    // Sadece giriş yapan kullanıcının (uid) verilerini getir
     const q = query(collection(db, "foods"), where("uid", "==", currentUser.uid));
     const querySnapshot = await getDocs(q);
     
