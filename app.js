@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-
+const GEMINI_API_KEY = "AIzaSyBz7C95mjwr3AoLREx4Ch06sVRE9cLTiYg";
 // Senin Firebase ayarların
 const firebaseConfig = {
   apiKey: "AIzaSyBNuu3I0mX8_Dj0ABOIKwissv7mNfNLUs0",
