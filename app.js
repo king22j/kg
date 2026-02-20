@@ -47,32 +47,62 @@ logoutBtn.addEventListener('click', () => {
     });
 });
 
-// 3. Yeni Yiyecek ve Kalori Ekleme
-addBtn.addEventListener('click', async () => {
-    const name = foodNameInput.value;
-    const calories = Number(foodCalorieInput.value);
+// 3. Yapay Zeka ile Yiyecek ve Kalori Ekleme
+const foodInput = document.getElementById('foodInput'); // Yeni HTML kutumuz
 
-    // Boş girilmesini engelle
-    if (name === "" || calories <= 0) {
-        alert("Lütfen geçerli bir yiyecek ve kalori girin!");
+addBtn.addEventListener('click', async () => {
+    const userInput = foodInput.value;
+
+    if (userInput === "") {
+        alert("Lütfen ne yediğini yaz!");
         return;
     }
 
+    // Kullanıcıya hesaplandığını hissettirelim
+    addBtn.innerText = "Yapay Zeka Hesaplarken Bekle... ⏳";
+    addBtn.disabled = true;
+
     try {
-        // Firebase Firestore'a kaydet
+        // Yapay Zekaya vereceğimiz gizli komut (Prompt)
+        const prompt = `Kullanıcı şu yemeği yediğini söylüyor: "${userInput}". Bana sadece bu yemeğin temizlenmiş özet adını ve toplam kalorisini aralarında virgül olacak şekilde tek satırda dön. Örnek çıktı: 2 Lahmacun ve Ayran, 650. Sadece bu formatta cevap ver, asla başka kelime veya açıklama yazma.`;
+        
+        // Gemini AI'a internet üzerinden istek atıyoruz
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
+        });
+
+        const data = await response.json();
+        
+        // AI'dan gelen cevabı alıyoruz (Örn: "2 Lahmacun ve Ayran, 650")
+        const aiResponse = data.candidates[0].content.parts[0].text.trim();
+        
+        // Gelen cevabı virgülden ikiye bölüyoruz (İsim ve Kalori olarak)
+        const [foodName, foodCalorieText] = aiResponse.split(',');
+        const calories = Number(foodCalorieText);
+
+        // Firebase veritabanına kaydet
         await addDoc(collection(db, "foods"), {
-            uid: currentUser.uid, // Hangi kullanıcı ekledi bilmemiz lazım
-            name: name,
+            uid: currentUser.uid,
+            name: foodName.trim(),
             calories: calories,
             timestamp: new Date()
         });
         
-        // Kutucukları temizle ve ekrana yazdır
-        foodNameInput.value = "";
-        foodCalorieInput.value = "";
-        addFoodToDOM(name, calories);
+        // Kutuyu temizle ve ekrana yazdır
+        foodInput.value = "";
+        addFoodToDOM(foodName.trim(), calories);
+
     } catch (e) {
-        console.error("Hata oluştu: ", e);
+        console.error("Yapay Zeka Hatası: ", e);
+        alert("Kalori hesaplanırken bir sorun oluştu! Farklı bir şekilde yazmayı dene.");
+    } finally {
+        // Butonu eski haline getir
+        addBtn.innerText = "Yapay Zekaya Sor ve Ekle";
+        addBtn.disabled = false;
     }
 });
 
